@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive JSON Viewer</title>
+  <link rel="icon" href="raw.githubusercontent.com/Tank911/tank911.github.io/refs/heads/main/icon/icon.png" type="image/png">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      background-color: #1e1e2e;
+      color: #cdd6f4;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h2 {
+      margin-bottom: 16px;
+      color: #89b4fa;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .btn {
+      background-color: #89b4fa;
+      color: #11111b;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background-color: #b4befe; }
+    #fileName { font-size: 0.9em; color: #a6adc8; }
+    
+    #jsonDisplay {
+      background-color: #181825;
+      border: 1px solid #313244;
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+
+    /* JSON Syntax Colors */
+    .json-key { color: #f38ba8; font-weight: bold; }
+    .json-string { color: #a6e3a1; }
+    .json-number { color: #fab387; }
+    .json-boolean { color: #cba6f7; }
+    .json-null { color: #f5e0dc; font-style: italic; }
+    
+    /* Collapsible Styling */
+    details { margin-left: 16px; }
+    summary {
+      cursor: pointer;
+      color: #89b4fa;
+      user-select: none;
+    }
+    summary:hover { color: #b4befe; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2 style="text-align: center;">JSON File Viewer</h2>
+    <p style="text-align: center;">You Not See File?</p>
+    <p style="text-align: center;">Is Tools see File Viewer to help as json.</p>
+    <div class="controls">
+      <label for="fileInput" class="btn">Choose JSON File</label>
+      <input type="file" id="fileInput" accept=".json,application/json">
+      <span id="fileName">No file selected</span>
+    </div>
+
+    <div id="jsonDisplay">Upload a JSON file above to render its content...</div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const fileName = document.getElementById('fileName');
+    const jsonDisplay = document.getElementById('jsonDisplay');
+
+    fileInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      fileName.textContent = file.name;
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        try {
+          const jsonObject = JSON.parse(e.target.result);
+          jsonDisplay.innerHTML = '';
+          jsonDisplay.appendChild(buildTree(jsonObject));
+        } catch (err) {
+          jsonDisplay.innerHTML = `<span style="color: #f38ba8;">Invalid JSON File: ${err.message}</span>`;
+        }
+      };
+
+      reader.readAsText(file);
+    });
+
+    function buildTree(data) {
+      if (typeof data === 'object' && data !== null) {
+        const isArray = Array.isArray(data);
+        const details = document.createElement('details');
+        details.open = true; // Default expanded
+        
+        const summary = document.createElement('summary');
+        const keys = Object.keys(data);
+        summary.textContent = isArray ? `Array[${keys.length}]` : `Object{${keys.length}}`;
+        details.appendChild(summary);
+
+        for (const key of keys) {
+          const div = document.createElement('div');
+          div.style.marginLeft = '16px';
+
+          const keySpan = document.createElement('span');
+          keySpan.className = 'json-key';
+          keySpan.textContent = isArray ? `[${key}]: ` : `"${key}": `;
+          div.appendChild(keySpan);
+
+          if (typeof data[key] === 'object' && data[key] !== null) {
+            div.appendChild(buildTree(data[key]));
+          } else {
+            div.appendChild(formatPrimitive(data[key]));
+          }
+          details.appendChild(div);
+        }
+        return details;
+      } else {
+        return formatPrimitive(data);
+      }
+    }
+
+    function formatPrimitive(value) {
+      const span = document.createElement('span');
+      if (typeof value === 'string') {
+        span.className = 'json-string';
+        span.textContent = `"${value}"`;
+      } else if (typeof value === 'number') {
+        span.className = 'json-number';
+        span.textContent = value;
+      } else if (typeof value === 'boolean') {
+        span.className = 'json-boolean';
+        span.textContent = value;
+      } else if (value === null) {
+        span.className = 'json-null';
+        span.textContent = 'null';
+      }
+      return span;
+    }
+  </script>
+</body>
+</html>
